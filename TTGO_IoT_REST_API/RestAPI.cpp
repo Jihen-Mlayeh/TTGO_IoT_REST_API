@@ -7,12 +7,12 @@ RestAPI::RestAPI(WebServer* server, TemperatureControl* temp,
     _lightSensor = light;
     _led = led;
     _tempThreshold = 30.0;
-    _lightThreshold = 2000;
+    _lightThreshold = 50;
     _autoMode = false;
+    _currentMode = "MANUEL";  // ✅ AJOUTÉ
 }
 
 void RestAPI::begin() {
-    // Routes API
     _server->on("/sensors", HTTP_GET, [this]() { this->handleGetSensors(); });
     _server->on("/sensors/temperature", HTTP_GET, [this]() { this->handleGetTemperature(); });
     _server->on("/sensors/light", HTTP_GET, [this]() { this->handleGetLight(); });
@@ -21,6 +21,7 @@ void RestAPI::begin() {
     _server->on("/led/toggle", HTTP_POST, [this]() { this->handleLedToggle(); });
     _server->on("/threshold/set", HTTP_POST, [this]() { this->handleSetThreshold(); });
     _server->on("/threshold", HTTP_GET, [this]() { this->handleGetThreshold(); });
+    _server->on("/mode/set", HTTP_POST, [this]() { this->handleSetMode(); });  // ✅ AJOUTÉ
     _server->on("/status", HTTP_GET, [this]() { this->handleGetStatus(); });
     _server->onNotFound([this]() { this->handleNotFound(); });
     
@@ -32,7 +33,7 @@ void RestAPI::handleClient() {
 }
 
 void RestAPI::handleGetSensors() {
-    StaticJsonDocument<300> doc;
+    StaticJsonDocument<256> doc;
     String response;
     
     doc["code"] = 200;
@@ -99,7 +100,7 @@ void RestAPI::handleLedOn() {
     doc["code"] = 200;
     doc["status"] = "OK";
     doc["led_state"] = "ON";
-    doc["message"] = "LED allumee avec succes";
+    doc["message"] = "LED allumee";
     
     serializeJson(doc, response);
     _server->send(200, "application/json", response);
@@ -114,7 +115,7 @@ void RestAPI::handleLedOff() {
     doc["code"] = 200;
     doc["status"] = "OK";
     doc["led_state"] = "OFF";
-    doc["message"] = "LED eteinte avec succes";
+    doc["message"] = "LED eteinte";
     
     serializeJson(doc, response);
     _server->send(200, "application/json", response);
@@ -129,7 +130,7 @@ void RestAPI::handleLedToggle() {
     doc["code"] = 200;
     doc["status"] = "OK";
     doc["led_state"] = _led->getState() ? "ON" : "OFF";
-    doc["message"] = "LED basculee avec succes";
+    doc["message"] = "LED basculee";
     
     serializeJson(doc, response);
     _server->send(200, "application/json", response);
@@ -150,14 +151,13 @@ void RestAPI::handleSetThreshold() {
     
     _tempThreshold = _server->arg("temp").toFloat();
     _lightThreshold = _server->arg("light").toInt();
-    _autoMode = true;
     
     doc["code"] = 200;
     doc["status"] = "OK";
     doc["temp_threshold"] = _tempThreshold;
     doc["light_threshold"] = _lightThreshold;
-    doc["auto_mode"] = true;
-    doc["message"] = "Seuils definis avec succes";
+    doc["auto_mode"] = _autoMode;
+    doc["message"] = "Seuils definis";
     
     serializeJson(doc, response);
     _server->send(200, "application/json", response);
@@ -172,13 +172,59 @@ void RestAPI::handleGetThreshold() {
     doc["temp_threshold"] = _tempThreshold;
     doc["light_threshold"] = _lightThreshold;
     doc["auto_mode"] = _autoMode;
+    doc["current_mode"] = _currentMode;  // ✅ AJOUTÉ
+    
+    serializeJson(doc, response);
+    _server->send(200, "application/json", response);
+}
+
+// ✅ NOUVELLE FONCTION : Changer de mode via API
+void RestAPI::handleSetMode() {
+    StaticJsonDocument<200> doc;
+    String response;
+    
+    if (!_server->hasArg("mode")) {
+        doc["code"] = 400;
+        doc["status"] = "ERROR";
+        doc["message"] = "Parametre manquant: mode (MANUEL, AUTO-TEMP, AUTO-LIGHT)";
+        serializeJson(doc, response);
+        _server->send(400, "application/json", response);
+        return;
+    }
+    
+    String mode = _server->arg("mode");
+    mode.toUpperCase();
+    
+    if (mode == "AUTO-TEMP") {
+        _autoMode = true;
+        _currentMode = "AUTO-TEMP";
+    } else if (mode == "AUTO-LIGHT") {
+        _autoMode = true;
+        _currentMode = "AUTO-LIGHT";
+    } else if (mode == "MANUEL") {
+        _autoMode = false;
+        _currentMode = "MANUEL";
+    } else {
+        doc["code"] = 400;
+        doc["status"] = "ERROR";
+        doc["message"] = "Mode invalide. Utilisez: MANUEL, AUTO-TEMP, AUTO-LIGHT";
+        serializeJson(doc, response);
+        _server->send(400, "application/json", response);
+        return;
+    }
+    
+    doc["code"] = 200;
+    doc["status"] = "OK";
+    doc["mode"] = _currentMode;
+    doc["auto_mode"] = _autoMode;
+    doc["message"] = "Mode defini avec succes";
     
     serializeJson(doc, response);
     _server->send(200, "application/json", response);
 }
 
 void RestAPI::handleGetStatus() {
-    StaticJsonDocument<400> doc;
+    StaticJsonDocument<300> doc;
     String response;
     
     float temp = _tempSensor->readTemperature();
@@ -199,6 +245,7 @@ void RestAPI::handleGetStatus() {
     
     JsonObject settings = doc.createNestedObject("settings");
     settings["auto_mode"] = _autoMode;
+    settings["current_mode"] = _currentMode;  // ✅ AJOUTÉ
     settings["temp_threshold"] = _tempThreshold;
     settings["light_threshold"] = _lightThreshold;
     
@@ -231,10 +278,27 @@ bool RestAPI::getAutoMode() {
     return _autoMode;
 }
 
-void RestAPI::updateAutoMode(float currentTemp, int currentLight) {
-    if (_autoMode) {
-        if (currentTemp > _tempThreshold || currentLight < _lightThreshold) {
+// ✅ FONCTION AJOUTÉE : Définir le mode actuel
+void RestAPI::setCurrentMode(String mode) {
+    _currentMode = mode;
+}
+
+// ✅ LOGIQUE CORRIGÉE : Séparer AUTO-TEMP et AUTO-LIGHT
+void RestAPI::updateAutoMode(float currentTemp, int currentLightPercent) {
+    if (!_autoMode) return;
+    
+    if (_currentMode == "AUTO-TEMP") {
+        // ✅ MODE AUTO-TEMP : Vérifier UNIQUEMENT la température
+        if (currentTemp > _tempThreshold) {
             _led->on();
+        } else {
+            _led->off();
+        }
+    } 
+    else if (_currentMode == "AUTO-LIGHT") {
+        // ✅ MODE AUTO-LIGHT : Vérifier UNIQUEMENT la lumière
+        if (currentLightPercent < _lightThreshold) {
+            _led->on();  // LED ON si sombre
         } else {
             _led->off();
         }

@@ -3,6 +3,7 @@
 
 #include <WebServer.h>
 #include <ArduinoJson.h>
+#include "config.h"
 #include "TemperatureControl.h"
 #include "PhotocellControl.h"
 #include "LedControl.h"
@@ -17,6 +18,7 @@ private:
     float _tempThreshold;
     int _lightThreshold;
     bool _autoMode;
+    String _currentMode;  // ✅ NOUVEAU
     
     void handleGetSensors();
     void handleGetTemperature();
@@ -26,6 +28,7 @@ private:
     void handleLedToggle();
     void handleSetThreshold();
     void handleGetThreshold();
+    void handleSetMode();  // ✅ NOUVEAU
     void handleGetStatus();
     void handleNotFound();
     
@@ -37,6 +40,7 @@ public:
     void setThreshold(float temp, int light);
     void setAutoMode(bool mode);
     bool getAutoMode();
+    void setCurrentMode(String mode);  // ✅ NOUVEAU
     void updateAutoMode(float currentTemp, int currentLight);
 };
 

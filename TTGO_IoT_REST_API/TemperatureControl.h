@@ -9,13 +9,13 @@ private:
     int _buffer[10];
     int _bufferIndex;
     
-    float R0;
-    float R_AT_25C;
-    float B_COEFFICIENT;
-    float T0_KELVIN;
-    float VREF;
-    float ADC_MAX;
-    float ESP32_VMAX;
+    float _R0;
+    float _R_AT_25C;
+    float _B_COEFFICIENT;
+    float _T0_KELVIN;
+    float _VREF;
+    float _ADC_MAX;
+    float _ESP32_VMAX;
     
     int getAverage(int buffer[], int size);
     

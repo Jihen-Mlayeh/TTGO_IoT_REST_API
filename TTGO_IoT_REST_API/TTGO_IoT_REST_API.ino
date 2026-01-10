@@ -170,8 +170,9 @@ void setup() {
   Serial.println("  POST /led/on");
   Serial.println("  POST /led/off");
   Serial.println("  POST /led/toggle");
-  Serial.println("  POST /threshold/set?temp=30&light=2000");
+  Serial.println("  POST /threshold/set?temp=30&light=50");
   Serial.println("  GET  /threshold");
+  Serial.println("  POST /mode/set?mode=AUTO-TEMP");
   Serial.println("  GET  /status");
   Serial.println("\n========================================\n");
 }
@@ -211,15 +212,19 @@ void loop() {
     delay(50);
     if (currentMode == "MANUEL") {
       currentMode = "AUTO-TEMP";
-      api.setAutoMode(true);
-      api.setThreshold(30.0, 2000);
+      api.setAutoMode(true);  // ✅ ACTIVE autoMode
+      api.setCurrentMode("AUTO-TEMP");  // ✅ NOUVEAU : informe l'API du mode
+      api.setThreshold(30.0, 50);
       Serial.println(">>> Mode AUTO-TEMP");
     } else if (currentMode == "AUTO-TEMP") {
       currentMode = "AUTO-LIGHT";
+      api.setAutoMode(true);  // ✅ RESTE true
+      api.setCurrentMode("AUTO-LIGHT");  // ✅ NOUVEAU
       Serial.println(">>> Mode AUTO-LIGHT");
     } else {
       currentMode = "MANUEL";
-      api.setAutoMode(false);
+      api.setAutoMode(false);  // ✅ DÉSACTIVE autoMode
+      api.setCurrentMode("MANUEL");  // ✅ NOUVEAU
       Serial.println(">>> Mode MANUEL");
     }
   }
@@ -231,7 +236,7 @@ void loop() {
   // MODE AUTOMATIQUE
   // ========================================
   if (api.getAutoMode()) {
-    api.updateAutoMode(temperature, lightRaw);
+    api.updateAutoMode(temperature, lightPercent);
   }
   
   // ========================================
@@ -247,6 +252,7 @@ void loop() {
         Firebase.RTDB.setInt(&fbdo, "/sensors/lightPercent", lightPercent);
         Firebase.RTDB.setBool(&fbdo, "/actuators/led", led.getState());
         Firebase.RTDB.setString(&fbdo, "/settings/mode", currentMode);
+        Firebase.RTDB.setBool(&fbdo, "/settings/autoMode", api.getAutoMode());  // ✅ AJOUTÉ
         Firebase.RTDB.setTimestamp(&fbdo, "/sensors/lastUpdate");
         
         Serial.println("OK");

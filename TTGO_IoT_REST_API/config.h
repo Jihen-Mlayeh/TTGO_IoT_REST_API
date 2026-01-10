@@ -4,8 +4,8 @@
 // ========================================
 // CONFIGURATION WIFI
 // ========================================
-#define WIFI_SSID "PlanetCampus - Prive 004347"
-#define WIFI_PASSWORD "CM337tbXD9o6F"
+#define WIFI_SSID "Jihen’s iPhone (2)"
+#define WIFI_PASSWORD "jihen123"
 
 // ========================================
 // CONFIGURATION FIREBASE

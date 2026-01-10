@@ -1,0 +1,24 @@
+# Arduino IDE
+*.hex
+*.eep
+*.lss
+*.map
+*.sym
+*.o
+*.d
+*.elf
+
+# Build directories
+build/
+.build/
+*.build/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Windows
+Thumbs.db
+desktop.ini

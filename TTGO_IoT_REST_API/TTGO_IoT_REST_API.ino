@@ -41,7 +41,6 @@ unsigned long lastDisplayUpdate = 0;
 
 bool lastButtonLeft = HIGH;
 bool lastButtonRight = HIGH;
-String currentMode = "MANUEL";
 
 // ========================================
 // SETUP
@@ -208,26 +207,27 @@ void loop() {
   }
   
   // Bouton DROIT : Cycle modes
-  if (lastButtonRight == HIGH && btnR == LOW) {
-    delay(50);
-    if (currentMode == "MANUEL") {
-      currentMode = "AUTO-TEMP";
-      api.setAutoMode(true);  // ✅ ACTIVE autoMode
-      api.setCurrentMode("AUTO-TEMP");  // ✅ NOUVEAU : informe l'API du mode
-      api.setThreshold(30.0, 50);
-      Serial.println(">>> Mode AUTO-TEMP");
-    } else if (currentMode == "AUTO-TEMP") {
-      currentMode = "AUTO-LIGHT";
-      api.setAutoMode(true);  // ✅ RESTE true
-      api.setCurrentMode("AUTO-LIGHT");  // ✅ NOUVEAU
-      Serial.println(">>> Mode AUTO-LIGHT");
-    } else {
-      currentMode = "MANUEL";
-      api.setAutoMode(false);  // ✅ DÉSACTIVE autoMode
-      api.setCurrentMode("MANUEL");  // ✅ NOUVEAU
-      Serial.println(">>> Mode MANUEL");
-    }
+ // Bouton DROIT : Cycle modes
+if (lastButtonRight == HIGH && btnR == LOW) {
+  delay(50);
+  
+  String currentMode = api.getCurrentMode();  // ✅ Lire depuis l'API
+  
+  if (currentMode == "MANUEL") {
+    api.setCurrentMode("AUTO-TEMP");
+    api.setAutoMode(true);
+    api.setThreshold(30.0, 2000);
+    Serial.println(">>> Mode AUTO-TEMP");
+  } else if (currentMode == "AUTO-TEMP") {
+    api.setCurrentMode("AUTO-LIGHT");
+    api.setAutoMode(true);
+    Serial.println(">>> Mode AUTO-LIGHT");
+  } else {
+    api.setCurrentMode("MANUEL");
+    api.setAutoMode(false);
+    Serial.println(">>> Mode MANUEL");
   }
+}
   
   lastButtonLeft = btnL;
   lastButtonRight = btnR;
@@ -251,7 +251,8 @@ void loop() {
         Firebase.RTDB.setInt(&fbdo, "/sensors/lightRaw", lightRaw);
         Firebase.RTDB.setInt(&fbdo, "/sensors/lightPercent", lightPercent);
         Firebase.RTDB.setBool(&fbdo, "/actuators/led", led.getState());
-        Firebase.RTDB.setString(&fbdo, "/settings/mode", currentMode);
+        
+        Firebase.RTDB.setString(&fbdo, "/settings/mode", api.getCurrentMode());  // ✅ Lire depuis l'API
         Firebase.RTDB.setBool(&fbdo, "/settings/autoMode", api.getAutoMode());  // ✅ AJOUTÉ
         Firebase.RTDB.setTimestamp(&fbdo, "/sensors/lastUpdate");
         
@@ -265,8 +266,8 @@ void loop() {
   // MISE À JOUR ÉCRAN
   // ========================================
   if (millis() - lastDisplayUpdate >= 500) {
-    display.showStatus(temperature, lightPercent, led.getState(), 
-                       wifiConnected, firebaseReady, currentMode);
+   display.showStatus(temperature, lightPercent, led.getState(), 
+                   wifiConnected, firebaseReady, api.getCurrentMode());  // ✅ Lire depuis l'API
     lastDisplayUpdate = millis();
   }
   
@@ -275,10 +276,10 @@ void loop() {
   // ========================================
   static unsigned long lastSerialPrint = 0;
   if (millis() - lastSerialPrint > 2000) {
-    Serial.printf("T:%.1fC | L:%d%% | LED:%s | Mode:%s\n", 
-                  temperature, lightPercent,
-                  led.getState() ? "ON" : "OFF",
-                  currentMode.c_str());
+   Serial.printf("T:%.1fC | L:%d%% | LED:%s | Mode:%s\n", 
+              temperature, lightPercent,
+              led.getState() ? "ON" : "OFF",
+              api.getCurrentMode().c_str());  // ✅ Lire depuis l'API
     lastSerialPrint = millis();
   }
   

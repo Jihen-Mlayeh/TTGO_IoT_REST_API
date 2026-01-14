@@ -46,6 +46,7 @@ public:
     void setAutoMode(bool mode);
     bool getAutoMode();
     void setCurrentMode(String mode);
+    String getCurrentMode();  // ✅ AJOUTEZ cette ligne
     void updateAutoMode(float currentTemp, int currentLight);
 };
 

@@ -9,10 +9,61 @@ RestAPI::RestAPI(WebServer* server, TemperatureControl* temp,
     _tempThreshold = 30.0;
     _lightThreshold = 50;
     _autoMode = false;
-    _currentMode = "MANUEL";  // ✅ AJOUTÉ
+    _currentMode = "MANUEL";
+}
+
+// ✅ NOUVELLE FONCTION : Ajouter les headers CORS
+void RestAPI::sendCorsHeaders() {
+    _server->sendHeader("Access-Control-Allow-Origin", "*");
+    _server->sendHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    _server->sendHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    _server->sendHeader("Access-Control-Max-Age", "86400");
 }
 
 void RestAPI::begin() {
+    // ✅ Handler pour OPTIONS (CORS preflight)
+    _server->on("/sensors", HTTP_OPTIONS, [this]() { 
+        sendCorsHeaders();
+        _server->send(204);
+    });
+    _server->on("/sensors/temperature", HTTP_OPTIONS, [this]() { 
+        sendCorsHeaders();
+        _server->send(204);
+    });
+    _server->on("/sensors/light", HTTP_OPTIONS, [this]() { 
+        sendCorsHeaders();
+        _server->send(204);
+    });
+    _server->on("/led/on", HTTP_OPTIONS, [this]() { 
+        sendCorsHeaders();
+        _server->send(204);
+    });
+    _server->on("/led/off", HTTP_OPTIONS, [this]() { 
+        sendCorsHeaders();
+        _server->send(204);
+    });
+    _server->on("/led/toggle", HTTP_OPTIONS, [this]() { 
+        sendCorsHeaders();
+        _server->send(204);
+    });
+    _server->on("/threshold/set", HTTP_OPTIONS, [this]() { 
+        sendCorsHeaders();
+        _server->send(204);
+    });
+    _server->on("/threshold", HTTP_OPTIONS, [this]() { 
+        sendCorsHeaders();
+        _server->send(204);
+    });
+    _server->on("/mode/set", HTTP_OPTIONS, [this]() { 
+        sendCorsHeaders();
+        _server->send(204);
+    });
+    _server->on("/status", HTTP_OPTIONS, [this]() { 
+        sendCorsHeaders();
+        _server->send(204);
+    });
+    
+    // Routes normales
     _server->on("/sensors", HTTP_GET, [this]() { this->handleGetSensors(); });
     _server->on("/sensors/temperature", HTTP_GET, [this]() { this->handleGetTemperature(); });
     _server->on("/sensors/light", HTTP_GET, [this]() { this->handleGetLight(); });
@@ -21,7 +72,7 @@ void RestAPI::begin() {
     _server->on("/led/toggle", HTTP_POST, [this]() { this->handleLedToggle(); });
     _server->on("/threshold/set", HTTP_POST, [this]() { this->handleSetThreshold(); });
     _server->on("/threshold", HTTP_GET, [this]() { this->handleGetThreshold(); });
-    _server->on("/mode/set", HTTP_POST, [this]() { this->handleSetMode(); });  // ✅ AJOUTÉ
+    _server->on("/mode/set", HTTP_POST, [this]() { this->handleSetMode(); });
     _server->on("/status", HTTP_GET, [this]() { this->handleGetStatus(); });
     _server->onNotFound([this]() { this->handleNotFound(); });
     
@@ -33,6 +84,8 @@ void RestAPI::handleClient() {
 }
 
 void RestAPI::handleGetSensors() {
+    sendCorsHeaders(); // ✅ AJOUTÉ
+    
     StaticJsonDocument<256> doc;
     String response;
     
@@ -58,6 +111,8 @@ void RestAPI::handleGetSensors() {
 }
 
 void RestAPI::handleGetTemperature() {
+    sendCorsHeaders(); // ✅ AJOUTÉ
+    
     StaticJsonDocument<200> doc;
     String response;
     
@@ -74,6 +129,8 @@ void RestAPI::handleGetTemperature() {
 }
 
 void RestAPI::handleGetLight() {
+    sendCorsHeaders(); // ✅ AJOUTÉ
+    
     StaticJsonDocument<200> doc;
     String response;
     
@@ -92,6 +149,8 @@ void RestAPI::handleGetLight() {
 }
 
 void RestAPI::handleLedOn() {
+    sendCorsHeaders(); // ✅ AJOUTÉ
+    
     StaticJsonDocument<200> doc;
     String response;
     
@@ -107,6 +166,8 @@ void RestAPI::handleLedOn() {
 }
 
 void RestAPI::handleLedOff() {
+    sendCorsHeaders(); // ✅ AJOUTÉ
+    
     StaticJsonDocument<200> doc;
     String response;
     
@@ -122,6 +183,8 @@ void RestAPI::handleLedOff() {
 }
 
 void RestAPI::handleLedToggle() {
+    sendCorsHeaders(); // ✅ AJOUTÉ
+    
     StaticJsonDocument<200> doc;
     String response;
     
@@ -137,6 +200,8 @@ void RestAPI::handleLedToggle() {
 }
 
 void RestAPI::handleSetThreshold() {
+    sendCorsHeaders(); // ✅ AJOUTÉ
+    
     StaticJsonDocument<200> doc;
     String response;
     
@@ -164,6 +229,8 @@ void RestAPI::handleSetThreshold() {
 }
 
 void RestAPI::handleGetThreshold() {
+    sendCorsHeaders(); // ✅ AJOUTÉ
+    
     StaticJsonDocument<200> doc;
     String response;
     
@@ -172,14 +239,15 @@ void RestAPI::handleGetThreshold() {
     doc["temp_threshold"] = _tempThreshold;
     doc["light_threshold"] = _lightThreshold;
     doc["auto_mode"] = _autoMode;
-    doc["current_mode"] = _currentMode;  // ✅ AJOUTÉ
+    doc["current_mode"] = _currentMode;
     
     serializeJson(doc, response);
     _server->send(200, "application/json", response);
 }
 
-// ✅ NOUVELLE FONCTION : Changer de mode via API
 void RestAPI::handleSetMode() {
+    sendCorsHeaders(); // ✅ AJOUTÉ
+    
     StaticJsonDocument<200> doc;
     String response;
     
@@ -224,6 +292,8 @@ void RestAPI::handleSetMode() {
 }
 
 void RestAPI::handleGetStatus() {
+    sendCorsHeaders(); // ✅ AJOUTÉ
+    
     StaticJsonDocument<300> doc;
     String response;
     
@@ -245,7 +315,7 @@ void RestAPI::handleGetStatus() {
     
     JsonObject settings = doc.createNestedObject("settings");
     settings["auto_mode"] = _autoMode;
-    settings["current_mode"] = _currentMode;  // ✅ AJOUTÉ
+    settings["current_mode"] = _currentMode;
     settings["temp_threshold"] = _tempThreshold;
     settings["light_threshold"] = _lightThreshold;
     
@@ -254,6 +324,8 @@ void RestAPI::handleGetStatus() {
 }
 
 void RestAPI::handleNotFound() {
+    sendCorsHeaders(); // ✅ AJOUTÉ
+    
     StaticJsonDocument<200> doc;
     String response;
     
@@ -278,17 +350,14 @@ bool RestAPI::getAutoMode() {
     return _autoMode;
 }
 
-// ✅ FONCTION AJOUTÉE : Définir le mode actuel
 void RestAPI::setCurrentMode(String mode) {
     _currentMode = mode;
 }
 
-// ✅ LOGIQUE CORRIGÉE : Séparer AUTO-TEMP et AUTO-LIGHT
 void RestAPI::updateAutoMode(float currentTemp, int currentLightPercent) {
     if (!_autoMode) return;
     
     if (_currentMode == "AUTO-TEMP") {
-        // ✅ MODE AUTO-TEMP : Vérifier UNIQUEMENT la température
         if (currentTemp > _tempThreshold) {
             _led->on();
         } else {
@@ -296,9 +365,8 @@ void RestAPI::updateAutoMode(float currentTemp, int currentLightPercent) {
         }
     } 
     else if (_currentMode == "AUTO-LIGHT") {
-        // ✅ MODE AUTO-LIGHT : Vérifier UNIQUEMENT la lumière
         if (currentLightPercent < _lightThreshold) {
-            _led->on();  // LED ON si sombre
+            _led->on();
         } else {
             _led->off();
         }

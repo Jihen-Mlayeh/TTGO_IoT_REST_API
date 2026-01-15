@@ -52,26 +52,48 @@ float TemperatureControl::readTemperature() {
     
     if (adcValue == 0) return 25.0;
     
-    // Conversion ADC → Tension ESP32 (0-3.3V)
-    float measuredVoltage = (adcValue / _ADC_MAX) * _ESP32_VMAX;
+    // ========================================
+    // ⭐ CALCUL CORRIGÉ POUR 3.3V
+    // ========================================
     
-    // Extrapolation → Tension réelle du circuit (0-5V)
-    float realVoltage = measuredVoltage * (_VREF / _ESP32_VMAX);
+    // Conversion ADC → Tension (0-3.3V)
+    // Plus besoin d'extrapolation car VREF = ESP32_VMAX = 3.3V
+    float voltage = (adcValue / _ADC_MAX) * _ESP32_VMAX;
     
-    if (realVoltage > _VREF) realVoltage = _VREF;
-    if (realVoltage < 0.1) return 25.0;
+    if (voltage >= _VREF - 0.01) voltage = _VREF - 0.01;
+    if (voltage < 0.1) return 25.0;
     
-    // Calcul résistance NTC (NTC en BAS du diviseur)
-    float Rth = _R0 * (realVoltage / (_VREF - realVoltage));
+    // Calcul résistance NTC
+    // Circuit: 3.3V ─── R0 (10kΩ) ─── [GPIO36] ─── NTC ─── GND
+    //                                    ↑
+    //                                 mesure ici
+    float Rth = _R0 * ((_VREF - voltage) / voltage);
     
-    // Si les valeurs semblent inversées, commentez la ligne ci-dessus et décommentez celle-ci :
-    // float Rth = _R0 * ((_VREF - realVoltage) / realVoltage);
+    // ========================================
+    // 🔍 CODE DEBUG
+    // ========================================
+    Serial.println("========================================");
+    Serial.print("ADC brut: ");
+    Serial.println(adcValue);
+    Serial.print("Tension mesurée: ");
+    Serial.print(voltage, 3);
+    Serial.println(" V");
+    Serial.print("Résistance NTC (Rth): ");
+    Serial.print(Rth, 0);
+    Serial.println(" Ω");
+    // ========================================
     
     if(Rth < 100 || Rth > 200000) return 25.0;
     
     // Équation Steinhart-Hart
     float TempK = 1.0 / ((1.0 / _T0_KELVIN) + (1.0 / _B_COEFFICIENT) * log(Rth / _R_AT_25C));
     float tempC = TempK - 273.15;
+    
+    // 🔍 DEBUG - Affiche la température calculée
+    Serial.print("Température calculée: ");
+    Serial.print(tempC, 1);
+    Serial.println(" °C");
+    Serial.println("========================================");
     
     if(tempC < -10.0) tempC = 20.0;
     if(tempC > 80.0) tempC = 40.0;

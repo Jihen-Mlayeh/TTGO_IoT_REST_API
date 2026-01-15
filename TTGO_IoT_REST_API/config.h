@@ -31,7 +31,7 @@
 #define R_AT_25C 10000.0
 #define B_COEFFICIENT 3950.0
 #define T0_KELVIN 298.15
-#define VREF 5.0
+#define VREF 3.3
 #define ADC_MAX 4095.0
 #define ESP32_VMAX 3.3
 

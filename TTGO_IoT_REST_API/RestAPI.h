@@ -18,8 +18,12 @@ private:
     float _tempThreshold;
     int _lightThreshold;
     bool _autoMode;
-    String _currentMode;  // ✅ NOUVEAU
+    String _currentMode;
     
+    // ✅ AJOUTÉ : Fonction pour les headers CORS
+    void sendCorsHeaders();
+    
+    // Handlers privés
     void handleGetSensors();
     void handleGetTemperature();
     void handleGetLight();
@@ -28,19 +32,21 @@ private:
     void handleLedToggle();
     void handleSetThreshold();
     void handleGetThreshold();
-    void handleSetMode();  // ✅ NOUVEAU
+    void handleSetMode();
     void handleGetStatus();
     void handleNotFound();
     
 public:
     RestAPI(WebServer* server, TemperatureControl* temp, 
             PhotocellControl* light, LedControl* led);
+    
     void begin();
     void handleClient();
     void setThreshold(float temp, int light);
     void setAutoMode(bool mode);
     bool getAutoMode();
-    void setCurrentMode(String mode);  // ✅ NOUVEAU
+    void setCurrentMode(String mode);
+    String getCurrentMode();  // ✅ AJOUTEZ cette ligne
     void updateAutoMode(float currentTemp, int currentLight);
 };
 

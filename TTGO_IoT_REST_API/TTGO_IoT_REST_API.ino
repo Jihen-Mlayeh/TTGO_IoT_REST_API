@@ -216,11 +216,12 @@ if (lastButtonRight == HIGH && btnR == LOW) {
   if (currentMode == "MANUEL") {
     api.setCurrentMode("AUTO-TEMP");
     api.setAutoMode(true);
-    api.setThreshold(30.0, 2000);
+    api.setThreshold(30.0, 50);
     Serial.println(">>> Mode AUTO-TEMP");
   } else if (currentMode == "AUTO-TEMP") {
     api.setCurrentMode("AUTO-LIGHT");
     api.setAutoMode(true);
+    api.setThreshold(30.0, 50); 
     Serial.println(">>> Mode AUTO-LIGHT");
   } else {
     api.setCurrentMode("MANUEL");

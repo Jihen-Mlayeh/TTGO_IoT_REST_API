@@ -337,17 +337,39 @@ String RestAPI::getCurrentMode() {
 void RestAPI::updateAutoMode(float currentTemp, int currentLightPercent) {
     if (!_autoMode) return;
 
+    // 🔍 DEBUG - Ajoute ces lignes
+    Serial.println("=== UPDATE AUTO MODE ===");
+    Serial.print("Mode: ");
+    Serial.println(_currentMode);
+    
     if (_currentMode == "AUTO-TEMP") {
+        Serial.print("Temp: ");
+        Serial.print(currentTemp);
+        Serial.print(" > ");
+        Serial.print(_tempThreshold);
+        Serial.println(" ?");
+        
         if (currentTemp > _tempThreshold) {
             _led->on();
+            Serial.println("LED ON");
         } else {
             _led->off();
+            Serial.println("LED OFF");
         }
     } else if (_currentMode == "AUTO-LIGHT") {
+        Serial.print("Light: ");
+        Serial.print(currentLightPercent);
+        Serial.print(" < ");
+        Serial.print(_lightThreshold);
+        Serial.println(" ?");
+        
         if (currentLightPercent < _lightThreshold) {
             _led->on();
+            Serial.println("LED ON");
         } else {
             _led->off();
+            Serial.println("LED OFF");
         }
     }
+    Serial.println("========================");
 }
